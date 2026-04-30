@@ -1,174 +1,164 @@
 import React from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, radii, shadows } from "../styles/theme";
 import { formatMoney, getRoomImage } from "../utils/rooms";
 
 const styles = StyleSheet.create({
   roomCard: {
-    ...shadows.soft,
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    marginBottom: 18,
-    overflow: "hidden"
+    backgroundColor: "transparent", // Remove card container for a cleaner look
+    marginBottom: 48, // More space between items creates a premium feel
+  },
+  imageWrapper: {
+    position: 'relative',
+    overflow: "hidden",
+    borderRadius: 2, // Almost sharp corners are more "architectural"
   },
   roomImage: {
-    height: 186,
-    width: "100%"
+    height: 320, // Much taller image to emphasize the "Sanctuary"
+    width: "100%",
+    backgroundColor: '#F7F7F7',
+  },
+  availabilityOverlay: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 1,
+  },
+  availabilityText: {
+    fontSize: 10,
+    letterSpacing: 2,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    color: '#1A1A1A',
   },
   roomBody: {
-    padding: 18
+    paddingTop: 20,
+    paddingHorizontal: 4, // Align slightly inward from the image
+  },
+  categoryText: {
+    fontSize: 10,
+    letterSpacing: 3,
+    color: "#AF944F",
+    fontWeight: "600",
+    textTransform: "uppercase",
+    marginBottom: 8,
   },
   roomTitleRow: {
-    alignItems: "flex-start",
     flexDirection: "row",
-    gap: 10,
-    justifyContent: "space-between"
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    marginBottom: 12,
   },
   roomName: {
-    color: colors.text,
+    color: "#1A1A1A",
+    fontSize: 26,
+    fontWeight: "300",
+    fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', 
     flex: 1,
-    fontSize: 18,
-    fontWeight: "900"
-  },
-  statusPill: {
-    backgroundColor: colors.amberSoft,
-    borderColor: colors.gold,
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 5
-  },
-  statusPillMuted: {
-    backgroundColor: colors.surfaceSoft,
-    borderColor: colors.border
-  },
-  statusText: {
-    color: colors.burgundy,
-    fontSize: 12,
-    fontWeight: "900"
-  },
-  statusTextMuted: {
-    color: colors.muted
-  },
-  roomDescription: {
-    color: colors.muted,
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 7
-  },
-  roomMeta: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    marginTop: 12
-  },
-  roomMetaText: {
-    color: colors.muted,
-    fontSize: 14,
-    fontWeight: "700"
   },
   roomPrice: {
-    color: colors.burgundy,
+    color: "#1A1A1A",
     fontSize: 16,
-    fontWeight: "900",
-    marginLeft: "auto"
+    fontWeight: "400",
+    fontFamily: Platform.OS === 'ios' ? 'HelveticaNeue-Light' : 'sans-serif-light',
   },
-  cardActions: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 14
-  },
-  primaryButton: {
-    alignItems: "center",
-    backgroundColor: colors.burgundy,
-    borderColor: colors.gold,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "center",
-    minHeight: 44,
-    paddingHorizontal: 16
-  },
-  primaryButtonText: {
-    color: colors.white,
+  roomDescription: {
+    color: "#777",
     fontSize: 15,
-    fontWeight: "900"
+    lineHeight: 24,
+    fontWeight: "300",
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+    fontStyle: 'italic',
+    marginBottom: 24,
   },
-  secondaryButton: {
-    alignItems: "center",
-    backgroundColor: colors.black,
-    borderRadius: radii.md,
-    flex: 1,
+  footerActionRow: {
     flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderTopWidth: 0.5,
+    borderTopColor: "#EEE",
+    paddingTop: 16,
+  },
+  metaContainer: {
+    flexDirection: "row",
+    gap: 16,
+  },
+  metaText: {
+    fontSize: 11,
+    letterSpacing: 1,
+    color: "#999",
+    textTransform: "uppercase",
+  },
+  reserveAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
-    justifyContent: "center",
-    minHeight: 44,
-    paddingHorizontal: 14
   },
-  secondaryButtonText: {
-    color: colors.gold,
-    fontSize: 15,
-    fontWeight: "900"
-  },
-  disabledButton: {
-    backgroundColor: colors.disabled,
-    opacity: 0.75
+  reserveText: {
+    fontSize: 12,
+    letterSpacing: 1.5,
+    fontWeight: "700",
+    color: "#1A1A1A",
+    textTransform: "uppercase",
   }
 });
 
 export default function RoomCard({ room, onDetails, onReserve }) {
-  return (
-    <Pressable onPress={onDetails} style={styles.roomCard}>
-      <Image source={{ uri: getRoomImage(room) }} style={styles.roomImage} />
+  const isAvailable = room.available;
 
+  return (
+    <View style={styles.roomCard}>
+      {/* Image Section */}
+      <Pressable onPress={onDetails} style={styles.imageWrapper}>
+        <Image 
+          source={{ uri: getRoomImage(room) }} 
+          style={styles.roomImage} 
+          resizeMode="cover"
+        />
+        {!isAvailable && (
+          <View style={styles.availabilityOverlay}>
+            <Text style={styles.availabilityText}>Fully Booked</Text>
+          </View>
+        )}
+      </Pressable>
+
+      {/* Content Section */}
       <View style={styles.roomBody}>
+        <Text style={styles.categoryText}>The Residence</Text>
+        
         <View style={styles.roomTitleRow}>
           <Text style={styles.roomName}>{room.name}</Text>
-
-          <View style={[styles.statusPill, !room.available && styles.statusPillMuted]}>
-            <Text style={[styles.statusText, !room.available && styles.statusTextMuted]}>
-              {room.available ? "Open" : "Booked"}
-            </Text>
-          </View>
-        </View>
-
-        <Text numberOfLines={2} style={styles.roomDescription}>
-          {room.description}
-        </Text>
-
-        <View style={styles.roomMeta}>
-          <Text style={styles.roomMetaText}>
-            <Ionicons name="people-outline" size={15} color={colors.gold} /> {room.capacity} guests
-          </Text>
-
-          <Text style={styles.roomMetaText}>
-            <Ionicons name="bed-outline" size={15} color={colors.gold} /> {room.beds}
-          </Text>
-
           <Text style={styles.roomPrice}>{formatMoney(room.price)}</Text>
         </View>
 
-        <View style={styles.cardActions}>
-          <Pressable onPress={onDetails} style={styles.secondaryButton}>
-            <Ionicons name="eye-outline" size={17} color={colors.gold} />
-            <Text style={styles.secondaryButtonText}>Details</Text>
-          </Pressable>
+        <Text numberOfLines={2} style={styles.roomDescription}>
+          "{room.description}"
+        </Text>
 
-          <Pressable
-            disabled={!room.available}
-            onPress={onReserve}
-            style={[styles.primaryButton, !room.available && styles.disabledButton]}
+        <View style={styles.footerActionRow}>
+          <View style={styles.metaContainer}>
+            <Text style={styles.metaText}>{room.capacity} Guests</Text>
+            <Text style={styles.metaText}>•</Text>
+            <Text style={styles.metaText}>{room.beds} Beds</Text>
+          </View>
+
+          <Pressable 
+            onPress={isAvailable ? onReserve : null} 
+            style={({pressed}) => [
+                styles.reserveAction, 
+                { opacity: isAvailable ? (pressed ? 0.5 : 1) : 0.3 }
+            ]}
           >
-            <Ionicons name="calendar-outline" size={17} color={colors.white} />
-            <Text style={styles.primaryButtonText}>Reserve</Text>
+            <Text style={styles.reserveText}>
+              {isAvailable ? "Enquire" : "Unavailable"}
+            </Text>
+            {isAvailable && <Ionicons name="arrow-forward-sharp" size={16} color="#1A1A1A" />}
           </Pressable>
         </View>
       </View>
-    </Pressable>
+    </View>
   );
 }

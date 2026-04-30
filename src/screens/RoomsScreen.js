@@ -1,95 +1,108 @@
 import React, { useState } from "react";
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, radii, shadows } from "../styles/theme";
 import RoomCard from "../components/RoomCard";
 
 const styles = StyleSheet.create({
-  searchBox: {
-    ...shadows.soft,
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 14,
-    paddingHorizontal: 15
-  },
-  searchInput: {
-    color: colors.text,
+  container: {
     flex: 1,
-    fontSize: 15,
-    minHeight: 50
-  },
-  filterChip: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: colors.amberSoft,
-    borderColor: colors.gold,
-    borderRadius: 999,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 9
-  },
-  filterChipActive: {
-    backgroundColor: colors.burgundy,
-    borderColor: colors.gold
-  },
-  filterChipText: {
-    color: colors.burgundy,
-    fontSize: 13,
-    fontWeight: "900"
-  },
-  filterChipTextActive: {
-    color: colors.gold
-  },
-  sectionHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 12,
-    marginTop: 4
-  },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: "900"
-  },
-  sectionCount: {
-    color: colors.muted,
-    fontSize: 14,
-    fontWeight: "700"
+    backgroundColor: "#FFFFFF", // Pure white for a gallery feel
   },
   listContent: {
-    paddingBottom: 118,
-    paddingHorizontal: 20,
-    paddingTop: 18
+    paddingHorizontal: 24,
+    paddingTop: 40, // Deep top padding for a grand entrance
+    paddingBottom: 120,
+  },
+  headerContainer: {
+    marginBottom: 32,
+  },
+  brandTitle: {
+    fontSize: 10,
+    letterSpacing: 4,
+    fontWeight: "300",
+    color: colors.gold || "#AF944F",
+    textTransform: "uppercase",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  searchSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F9F9F9", // Subtle off-white
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    height: 52,
+    marginBottom: 24,
+    ...Platform.select({
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 },
+      android: { elevation: 2 },
+    }),
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 15,
+    fontWeight: "300",
+    color: "#1A1A1A",
+    letterSpacing: 0.5,
+  },
+  filterRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 40,
+  },
+  filterButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#E5E5E5",
+  },
+  filterButtonActive: {
+    backgroundColor: "#1A1A1A",
+    borderColor: "#1A1A1A",
+  },
+  filterText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#666",
+    letterSpacing: 0.5,
+  },
+  filterTextActive: {
+    color: "#FFF",
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+    paddingBottom: 12,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "400", // "Light" font weights look more expensive than bold
+    color: "#1A1A1A",
+    fontFamily: Platform.OS === 'ios' ? 'Optima' : 'serif', // Use serif if available
+  },
+  sectionCount: {
+    fontSize: 12,
+    color: "#999",
+    fontWeight: "300",
+    marginBottom: 4,
   },
   emptyState: {
-    ...shadows.soft,
     alignItems: "center",
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    gap: 10,
-    padding: 28
+    marginTop: 80,
   },
-  emptyTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: "900"
-  },
-  mutedText: {
-    color: colors.muted,
-    fontSize: 15,
-    lineHeight: 21,
-    textAlign: "center"
+  emptyText: {
+    fontSize: 14,
+    color: "#999",
+    fontWeight: "300",
+    letterSpacing: 0.5,
+    marginTop: 12,
   }
 });
 
@@ -98,67 +111,62 @@ export default function RoomsScreen({ rooms, refreshing, onRefresh, onDetails, o
   const [showAvailableOnly, setShowAvailableOnly] = useState(false);
 
   const filteredRooms = rooms.filter((room) => {
-    const matchesQuery = `${room.name} ${room.description} ${room.amenities.join(" ")}`
-      .toLowerCase()
-      .includes(query.toLowerCase());
-
+    const matchesQuery = `${room.name} ${room.description}`.toLowerCase().includes(query.toLowerCase());
     return matchesQuery && (!showAvailableOnly || room.available);
   });
 
   return (
-    <FlatList
-      data={filteredRooms}
-      keyExtractor={(item) => String(item.id)}
-      ListHeaderComponent={
-        <View>
-          <View style={styles.searchBox}>
-            <Ionicons name="search" size={20} color={colors.gold} />
-            <TextInput
-              autoCapitalize="none"
-              placeholder="Search rooms, beds, amenities"
-              placeholderTextColor={colors.placeholder}
-              style={styles.searchInput}
-              value={query}
-              onChangeText={setQuery}
-            />
-          </View>
+    <View style={styles.container}>
+      <FlatList
+        data={filteredRooms}
+        keyExtractor={(item) => String(item.id)}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#AF944F" />
+        }
+        ListHeaderComponent={
+          <View style={styles.headerContainer}>
+            <Text style={styles.brandTitle}>The Collection</Text>
+            
+            <View style={styles.searchSection}>
+              <Ionicons name="search-outline" size={18} color="#AF944F" />
+              <TextInput
+                placeholder="Search by destination or amenity"
+                placeholderTextColor="#BBB"
+                style={styles.searchInput}
+                value={query}
+                onChangeText={setQuery}
+              />
+            </View>
 
-          <Pressable
-            onPress={() => setShowAvailableOnly((current) => !current)}
-            style={[styles.filterChip, showAvailableOnly && styles.filterChipActive]}
-          >
-            <Ionicons
-              name={showAvailableOnly ? "checkbox" : "square-outline"}
-              size={18}
-              color={showAvailableOnly ? colors.gold : colors.burgundy}
-            />
-            <Text style={[styles.filterChipText, showAvailableOnly && styles.filterChipTextActive]}>
-              Available rooms only
-            </Text>
-          </Pressable>
+            <View style={styles.filterRow}>
+              <Pressable
+                onPress={() => setShowAvailableOnly(!showAvailableOnly)}
+                style={[styles.filterButton, showAvailableOnly && styles.filterButtonActive]}
+              >
+                <Text style={[styles.filterText, showAvailableOnly && styles.filterTextActive]}>
+                  {showAvailableOnly ? "Showing Available" : "Filter by Availability"}
+                </Text>
+              </Pressable>
+            </View>
 
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Rooms</Text>
-            <Text style={styles.sectionCount}>{filteredRooms.length} options</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Residences</Text>
+              <Text style={styles.sectionCount}>{filteredRooms.length} Total</Text>
+            </View>
           </View>
-        </View>
-      }
-      contentContainerStyle={styles.listContent}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.gold} />
-      }
-      renderItem={({ item }) => (
-        <RoomCard room={item} onDetails={() => onDetails(item)} onReserve={() => onReserve(item)} />
-      )}
-      ListEmptyComponent={
-        <View style={styles.emptyState}>
-          <Ionicons name="bed-outline" size={34} color={colors.gold} />
-          <Text style={styles.emptyTitle}>No rooms match your search</Text>
-          <Text style={styles.mutedText}>
-            Try another name, amenity, or turn off the availability filter.
-          </Text>
-        </View>
-      }
-    />
+        }
+        renderItem={({ item }) => (
+          <RoomCard room={item} onDetails={() => onDetails(item)} onReserve={() => onReserve(item)} />
+        )}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Ionicons name="ellipsis-horizontal" size={30} color="#E5E5E5" />
+            <Text style={styles.emptyText}>No matches found in the collection.</Text>
+          </View>
+        }
+      />
+    </View>
   );
 }
