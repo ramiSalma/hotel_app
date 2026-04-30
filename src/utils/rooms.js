@@ -15,15 +15,25 @@ export function normalizeRoom(room, index = 0) {
         .map((item) => item.trim())
         .filter(Boolean);
 
+  const roomType = room.type ? String(room.type).replace(/_/g, " ") : "room";
+  const roomNumber = room.room_number || room.number;
+  const name = room.name || room.title || (roomNumber ? `${roomType} ${roomNumber}` : `Room ${index + 1}`);
+  const status = String(room.status || "").toLowerCase();
+  const unavailableStatuses = ["booked", "occupied", "maintenance", "unavailable", "reserved"];
+  const image = Array.isArray(room.images) ? room.images[0] : room.image;
+
   return {
     id: room.id || room.room_id || index + 1,
-    name: room.name || room.title || `Room ${index + 1}`,
-    description: room.description || room.details || "Comfortable room with everything you need for a relaxed hotel stay.",
-    price: Number(room.price || room.price_per_night || room.night_price || 0),
+    name: name.charAt(0).toUpperCase() + name.slice(1),
+    description:
+      room.description ||
+      room.details ||
+      `A refined ${roomType} stay with ${room.bed_type || room.beds || "premium bedding"} on floor ${room.floor || "the hotel"}.`,
+    price: Number(room.price || room.price_per_night || room.night_price || room.base_price || 0),
     capacity: Number(room.capacity || room.guests || room.max_guests || 2),
     beds: room.beds || room.bed_type || "Queen bed",
-    available: room.available ?? room.is_available ?? room.status !== "booked",
-    image: room.image || room.image_url || room.photo || room.photo_url || room.thumbnail,
+    available: room.available ?? room.is_available ?? !unavailableStatuses.includes(status),
+    image: image || room.image_url || room.photo || room.photo_url || room.thumbnail,
     amenities: amenities.length ? amenities : ["Wi-Fi", "Air conditioning", "Private bathroom"]
   };
 }

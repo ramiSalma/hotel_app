@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { NativeModules, Platform } from "react-native";
 
 const platformDefaultHost = Platform.select({
   android: "http://10.0.2.2:8000",
@@ -7,7 +7,28 @@ const platformDefaultHost = Platform.select({
   default: "http://127.0.0.1:8000"
 });
 
-export const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || platformDefaultHost).replace(/\/$/, "");
+function getExpoDevServerApiUrl() {
+  const scriptURL = NativeModules?.SourceCode?.scriptURL || "";
+  const host = scriptURL.match(/^https?:\/\/([^/:]+)/)?.[1];
+
+  if (!host || host === "localhost" || host === "127.0.0.1") return "";
+
+  return `http://${host}:8000`;
+}
+
+function resolveApiBaseUrl() {
+  const configuredUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
+  const devServerUrl = Platform.OS === "web" ? "" : getExpoDevServerApiUrl();
+  const baseUrl = configuredUrl || devServerUrl || platformDefaultHost;
+
+  if (Platform.OS !== "web" && configuredUrl?.match(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/)) {
+    return (devServerUrl || platformDefaultHost).replace(/\/$/, "");
+  }
+
+  return baseUrl.replace(/\/$/, "");
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 const ROOM_ENDPOINTS = ["/api/rooms", "/api/room", "/rooms"];
 const RESERVATION_ENDPOINTS = ["/api/reservations", "/api/reservation", "/api/bookings", "/reservations"];
@@ -37,7 +58,9 @@ async function request(path, options = {}) {
         (typeof payload === "string" && payload) ||
         `Request failed with status ${response.status}`;
 
-      throw new Error(message);
+      const error = new Error(message);
+      error.status = response.status;
+      throw error;
     }
 
     return payload;
@@ -60,6 +83,10 @@ async function firstWorkingEndpoint(paths, options) {
       return await request(path, options);
     } catch (error) {
       errors.push(`${path}: ${error.message}`);
+
+      if (![404, 405].includes(error.status)) {
+        throw error;
+      }
     }
   }
 

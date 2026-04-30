@@ -6,13 +6,93 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   View
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { styles } from "../styles/styles";
+import { colors, radii, shadows } from "../styles/theme";
 import { formatMoney } from "../utils/rooms";
 import FormInput from "../components/FormInput";
+
+const styles = StyleSheet.create({
+  modalBackdrop: {
+    backgroundColor: "rgba(0, 0, 0, 0.62)",
+    flex: 1,
+    justifyContent: "flex-end"
+  },
+  formSheet: {
+    backgroundColor: colors.surface,
+    borderColor: colors.gold,
+    borderTopLeftRadius: radii.xl,
+    borderTopRightRadius: radii.xl,
+    borderWidth: 1,
+    maxHeight: "92%"
+  },
+  sheetContent: {
+    padding: 20
+  },
+  sheetTopRow: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: 14,
+    justifyContent: "space-between"
+  },
+  sheetTitleBlock: {
+    flex: 1
+  },
+  formTitle: {
+    color: colors.text,
+    fontSize: 22,
+    fontWeight: "900"
+  },
+  formSubtitle: {
+    color: colors.burgundy,
+    fontSize: 15,
+    fontWeight: "900",
+    marginTop: 4
+  },
+  iconButton: {
+    ...shadows.soft,
+    alignItems: "center",
+    backgroundColor: colors.black,
+    borderColor: colors.gold,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    height: 42,
+    justifyContent: "center",
+    width: 42
+  },
+  inputRow: {
+    flexDirection: "row",
+    gap: 12
+  },
+  notesInput: {
+    minHeight: 88,
+    textAlignVertical: "top"
+  },
+  wideButton: {
+    ...shadows.gold,
+    alignItems: "center",
+    backgroundColor: colors.gold,
+    borderRadius: radii.lg,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    marginTop: 16,
+    minHeight: 50,
+    paddingHorizontal: 16
+  },
+  primaryButtonText: {
+    color: colors.black,
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  disabledButton: {
+    backgroundColor: colors.disabled,
+    opacity: 0.75
+  }
+});
 
 export default function ReservationModal({ room, value, submitting, onChange, onClose, onSubmit }) {
   if (!room) return null;
@@ -32,7 +112,7 @@ export default function ReservationModal({ room, value, submitting, onChange, on
               </View>
 
               <Pressable accessibilityLabel="Close reservation form" onPress={onClose} style={styles.iconButton}>
-                <Ionicons name="close" size={20} color="#213f39" />
+                <Ionicons name="close" size={20} color={colors.gold} />
               </Pressable>
             </View>
 
@@ -95,9 +175,9 @@ export default function ReservationModal({ room, value, submitting, onChange, on
                 style={[styles.wideButton, submitting && styles.disabledButton]}
               >
                 {submitting ? (
-                  <ActivityIndicator color="#ffffff" />
+                  <ActivityIndicator color={colors.black} />
                 ) : (
-                  <Ionicons name="send" size={18} color="#ffffff" />
+                  <Ionicons name="send" size={18} color={colors.black} />
                 )}
 
                 <Text style={styles.primaryButtonText}>
