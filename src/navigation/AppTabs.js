@@ -1,5 +1,5 @@
-import React from "react";
-import { StyleSheet, Platform } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { StyleSheet, Platform, Animated, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -16,13 +16,12 @@ import LoadingState from "../components/LoadingState";
 const Tab = createBottomTabNavigator();
 
 const luxuryColors = {
-  gold: "#AF944F", // More muted, champagne gold
-  black: "#1A1A1A", // Off-black is more premium than pure black
-  muted: "#999999",
+  gold: "#AF944F",
+  black: "#1A1A1A",
+  muted: "#777777", // Slightly darker for better contrast
   white: "#FFFFFF",
 };
 
-// Reordered: Menu is now the 3rd link (Center anchor)
 const tabScreens = {
   home: { label: "HOME", icon: "home-outline", activeIcon: "home-sharp" },
   rooms: { label: "SUITES", icon: "bed-outline", activeIcon: "bed-sharp" },
@@ -30,6 +29,27 @@ const tabScreens = {
   trips: { label: "TRIPS", icon: "calendar-outline", activeIcon: "calendar-sharp" },
   profile: { label: "PROFILE", icon: "person-outline", activeIcon: "person-sharp" }
 };
+
+// --- LUXURY ANIMATED ICON COMPONENT ---
+function TabBarIcon({ focused, color, name }) {
+  const scaleValue = useRef(new Animated.Value(focused ? 1.2 : 1)).current;
+
+  useEffect(() => {
+    Animated.spring(scaleValue, {
+      toValue: focused ? 1.15 : 1,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 100,
+    }).start();
+  }, [focused]);
+
+  return (
+    <Animated.View style={{ transform: [{ scale: scaleValue }], alignItems: 'center' }}>
+      <Ionicons name={name} size={20} color={color} />
+      {focused && <View style={styles.activeIndicator} />}
+    </Animated.View>
+  );
+}
 
 export default function AppTabs({
   availableCount,
@@ -54,7 +74,6 @@ export default function AppTabs({
         screenOptions={({ route }) => {
           const screen = tabScreens[route.name];
 
-          // Hide Tab Bar for Details screen
           if (!screen) {
             return {
               headerShown: false,
@@ -70,17 +89,16 @@ export default function AppTabs({
             tabBarStyle: styles.tabBar,
             tabBarLabelStyle: styles.tabBarLabel,
             tabBarIcon: ({ focused, color }) => (
-              <Ionicons
-                name={focused ? screen.activeIcon : screen.icon}
-                size={20}
-                color={color}
+              <TabBarIcon 
+                focused={focused} 
+                color={color} 
+                name={focused ? screen.activeIcon : screen.icon} 
               />
             ),
             tabBarLabel: screen.label
           };
         }}
       >
-        {/* Order matters here for the physical layout */}
         <Tab.Screen name="home">
           {({ navigation }) => (
             loading ? <LoadingState /> : (
@@ -111,7 +129,6 @@ export default function AppTabs({
           )}
         </Tab.Screen>
 
-        {/* Third Link: Menu */}
         <Tab.Screen name="menu" component={MenuScreen} />
 
         <Tab.Screen name="trips">
@@ -137,26 +154,37 @@ const styles = StyleSheet.create({
     backgroundColor: luxuryColors.black,
     borderTopWidth: 0,
     position: "absolute",
-    bottom: 34,
-    left: 20,
-    right: 20,
-    height: 72,
-    borderRadius: 20,
-    // Luxury padding adjustment
-    paddingBottom: Platform.OS === 'ios' ? 20 : 12,
-    paddingTop: 12,
-    // Sophisticated shadow
+    
+    // Architectural Spacing
+    bottom: Platform.OS === 'ios' ? 38 : 28,
+    marginHorizontal: 24, // Luxury margin-x
+    height: 74,
+    borderRadius: 26,
+    
+    // Padding logic to keep icons centered
+    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+    paddingTop: 14,
+
+    // Deep Onyx Shadow
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 15 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.5,
+    shadowRadius: 25,
+    elevation: 15,
   },
   tabBarLabel: {
-    fontSize: 9,
-    fontWeight: "600",
-    letterSpacing: 1.5,
-    marginTop: 2,
+    fontSize: 8,
+    fontWeight: "700",
+    letterSpacing: 2, // Wider tracking for luxury feel
+    marginTop: 6,
     fontFamily: Platform.OS === 'ios' ? 'HelveticaNeue-Medium' : 'sans-serif-medium',
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: -8,
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: luxuryColors.gold,
   }
 });
