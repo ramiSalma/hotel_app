@@ -4,67 +4,29 @@ import { Ionicons } from "@expo/vector-icons";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
-import { API_BASE_URL } from "../api/hotelApi";
 import { colors } from "../styles/theme";
 import HomeScreen from "../screens/HomeScreen";
 import RoomsScreen from "../screens/RoomsScreen";
 import TripsScreen from "../screens/TripsScreen";
-import InfoScreen from "../screens/InfoScreen";
-import LoadingState from "../components/LoadingState";
+import ProfileScreen from "../screens/ProfileScreen";
+import MenuScreen from "../screens/MenuScreen"; // You can create a simple drawer-style list here
 
 const Tab = createBottomTabNavigator();
 
-const tabScreens = {
-  home: {
-    label: "Home",
-    icon: "home-outline",
-    activeIcon: "home"
-  },
-  rooms: {
-    label: "Rooms",
-    icon: "bed-outline",
-    activeIcon: "bed"
-  },
-  trips: {
-    label: "Trips",
-    icon: "calendar-outline",
-    activeIcon: "calendar"
-  },
-  info: {
-    label: "Info",
-    icon: "information-circle-outline",
-    activeIcon: "information-circle"
-  }
+const luxuryColors = {
+  gold: "#D4AF37",
+  black: "#0D0D0D",
+  muted: "#707070",
 };
 
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: colors.black,
-    borderColor: colors.gold,
-    borderRadius: 24,
-    borderTopWidth: 1,
-    bottom: 16,
-    height: 74,
-    left: 16,
-    paddingBottom: 8,
-    paddingTop: 8,
-    position: "absolute",
-    right: 16,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.26,
-    shadowRadius: 28,
-    elevation: 8
-  },
-  tabBarItem: {
-    borderRadius: 18,
-    minHeight: 56
-  },
-  tabBarLabel: {
-    fontSize: 11,
-    fontWeight: "900"
-  }
-});
+// Updated screens with Menu at the start
+const tabScreens = {
+  menu: { label: "MENU", icon: "menu-outline", activeIcon: "menu" },
+  home: { label: "EXPLORE", icon: "home-outline", activeIcon: "home" },
+  rooms: { label: "SUITES", icon: "bed-outline", activeIcon: "bed" },
+  trips: { label: "TRIPS", icon: "calendar-outline", activeIcon: "calendar" },
+  profile: { label: "ACCOUNT", icon: "person-outline", activeIcon: "person" }
+};
 
 export default function AppTabs({
   availableCount,
@@ -74,79 +36,28 @@ export default function AppTabs({
   loading,
   navigationRef,
   onDetails,
-  onRefresh,
   onReserve,
-  refreshing,
   rooms,
   savedTrips,
   usingFallback
 }) {
-  const renderHome = (navigation) => {
-    if (loading) return <LoadingState />;
-
-    return (
-      <HomeScreen
-        availableCount={availableCount}
-        bestPrice={bestPrice}
-        error={error}
-        featuredRoom={featuredRoom}
-        rooms={rooms.slice(0, 3)}
-        usingFallback={usingFallback}
-        onDetails={onDetails}
-        onReserve={onReserve}
-        onViewRooms={() => navigation.navigate("rooms")}
-      />
-    );
-  };
-
-  const renderRooms = () => {
-    if (loading) return <LoadingState />;
-
-    return (
-      <RoomsScreen
-        rooms={rooms}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
-        onDetails={onDetails}
-        onReserve={onReserve}
-      />
-    );
-  };
-
-  const renderTrips = (navigation) => {
-    if (loading) return <LoadingState />;
-
-    return <TripsScreen trips={savedTrips} onExplore={() => navigation.navigate("rooms")} />;
-  };
-
-  const renderInfo = () => (
-    <InfoScreen
-      apiBaseUrl={API_BASE_URL}
-      error={error}
-      usingFallback={usingFallback}
-      onRefresh={onRefresh}
-    />
-  );
 
   return (
     <NavigationContainer ref={navigationRef}>
       <Tab.Navigator
+        initialRouteName="home" // Default to Home even though Menu is first in list
         screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarActiveBackgroundColor: colors.burgundy,
-          tabBarActiveTintColor: colors.gold,
-          tabBarInactiveTintColor: colors.mutedGold,
-          tabBarHideOnKeyboard: true,
-          tabBarItemStyle: styles.tabBarItem,
-          tabBarLabelStyle: styles.tabBarLabel,
+          headerShown: false, // COMPLETELY REMOVED HEADER
+          tabBarActiveTintColor: colors.gold || luxuryColors.gold,
+          tabBarInactiveTintColor: luxuryColors.muted,
           tabBarStyle: styles.tabBar,
-          tabBarIcon: ({ focused, color, size }) => {
+          tabBarLabelStyle: styles.tabBarLabel,
+          tabBarIcon: ({ focused, color }) => {
             const screen = tabScreens[route.name];
-
             return (
               <Ionicons
                 name={focused ? screen.activeIcon : screen.icon}
-                size={size}
+                size={22}
                 color={color}
               />
             );
@@ -154,11 +65,63 @@ export default function AppTabs({
           tabBarLabel: tabScreens[route.name].label
         })}
       >
-        <Tab.Screen name="home">{({ navigation }) => renderHome(navigation)}</Tab.Screen>
-        <Tab.Screen name="rooms">{renderRooms}</Tab.Screen>
-        <Tab.Screen name="trips">{({ navigation }) => renderTrips(navigation)}</Tab.Screen>
-        <Tab.Screen name="info">{renderInfo}</Tab.Screen>
+        <Tab.Screen name="menu" component={MenuScreen} />
+        
+        <Tab.Screen name="home">
+          {({ navigation }) => (
+            <HomeScreen
+              availableCount={availableCount}
+              bestPrice={bestPrice}
+              error={error}
+              featuredRoom={featuredRoom}
+              rooms={rooms.slice(0, 3)}
+              usingFallback={usingFallback}
+              onDetails={onDetails}
+              onReserve={onReserve}
+              onViewRooms={() => navigation.navigate("rooms")}
+            />
+          )}
+        </Tab.Screen>
+        
+        <Tab.Screen name="rooms">
+          {(props) => <RoomsScreen {...props} rooms={rooms} />}
+        </Tab.Screen>
+        
+        <Tab.Screen name="trips">
+          {({ navigation }) => (
+            <TripsScreen trips={savedTrips} onExplore={() => navigation.navigate("rooms")} />
+          )}
+        </Tab.Screen>
+
+        <Tab.Screen name="profile" component={ProfileScreen} />
       </Tab.Navigator>
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    backgroundColor: '#0D0D0D',
+    borderTopWidth: 0,
+    bottom: 30,
+    height: 75,
+    left: 15,
+    right: 15,
+    position: "absolute",
+    borderRadius: 35,
+    paddingBottom: 12,
+    paddingTop: 12,
+    // Soft glow shadow for luxury feel
+    shadowColor: luxuryColors.gold,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15, 
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  tabBarLabel: {
+    fontSize: 8,
+    fontWeight: "800",
+    letterSpacing: 1.2,
+    marginTop: 4,
+  }
+});
