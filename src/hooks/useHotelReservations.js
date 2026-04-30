@@ -8,7 +8,6 @@ import { normalizeRoom } from "../utils/rooms";
 
 export default function useHotelReservations(navigationRef) {
   const [rooms, setRooms] = useState([]);
-  const [selectedRoom, setSelectedRoom] = useState(null);
   const [reservationRoom, setReservationRoom] = useState(null);
   const [reservation, setReservation] = useState(initialReservation);
   const [savedTrips, setSavedTrips] = useState([]);
@@ -135,8 +134,6 @@ export default function useHotelReservations(navigationRef) {
     reservationRoom,
     rooms: visibleRooms,
     savedTrips,
-    selectedRoom,
-    setSelectedRoom,
     submitReservation,
     submitting,
     updateReservation,

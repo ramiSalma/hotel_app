@@ -7,7 +7,6 @@ import { colors } from "./src/styles/theme";
 import useHotelReservations from "./src/hooks/useHotelReservations";
 import AppTabs from "./src/navigation/AppTabs";
 import WelcomeScreen from "./src/screens/WelcomeScreen";
-import RoomDetails from "./src/modals/RoomDetails";
 import ReservationModal from "./src/modals/ReservationModal";
 
 const styles = StyleSheet.create({
@@ -41,7 +40,6 @@ export default function App() {
             featuredRoom={hotel.featuredRoom}
             loading={hotel.loading}
             navigationRef={navigationRef}
-            onDetails={hotel.setSelectedRoom}
             onRefresh={hotel.refreshRooms}
             onReserve={hotel.openReservation}
             refreshing={hotel.refreshing}
@@ -51,15 +49,6 @@ export default function App() {
           />
         </View>
       ) : null}
-
-      <RoomDetails
-        room={hotel.selectedRoom}
-        onClose={() => hotel.setSelectedRoom(null)}
-        onReserve={() => {
-          hotel.openReservation(hotel.selectedRoom);
-          hotel.setSelectedRoom(null);
-        }}
-      />
 
       <ReservationModal
         room={hotel.reservationRoom}
