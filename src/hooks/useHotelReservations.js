@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
 
 import { createReservation, getRooms } from "../api/hotelApi";
-import { fallbackRooms } from "../constants/rooms";
 import { carServiceOptions, getInitialReservation } from "../constants/reservation";
 import { normalizeRoom } from "../utils/rooms";
 
@@ -15,17 +14,9 @@ export default function useHotelReservations(navigationRef) {
   const [refreshing, setRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [usingFallback, setUsingFallback] = useState(false);
 
-  const normalizedFallbackRooms = useMemo(() => fallbackRooms.map(normalizeRoom), []);
-  const visibleRooms = rooms.length ? rooms : normalizedFallbackRooms;
-  const availableRooms = visibleRooms.filter((room) => room.available);
-  const featuredRoom = availableRooms[0] || visibleRooms[0];
-
-  const bestPrice = visibleRooms.reduce(
-    (lowest, room) => Math.min(lowest, Number(room.price || 0)),
-    Infinity
-  );
+  const availableRooms = useMemo(() => rooms.filter((room) => room.available), [rooms]);
+  const featuredRoom = availableRooms[0] || rooms[0];
 
   const loadRooms = useCallback(async () => {
     try {
@@ -35,10 +26,8 @@ export default function useHotelReservations(navigationRef) {
       const normalizedRooms = data.map(normalizeRoom);
 
       setRooms(normalizedRooms);
-      setUsingFallback(!normalizedRooms.length);
     } catch (err) {
       setRooms([]);
-      setUsingFallback(true);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -101,7 +90,7 @@ export default function useHotelReservations(navigationRef) {
       }
     }
 
-    const adults = Number(reservation.adults || reservation.guests || 1);
+    const adults = Number(reservation.adults || 1);
     const children = Number(reservation.children || 0);
     const guestCount = Math.max(adults + children, 1);
     const carService = carServiceOptions.find((option) => option.id === reservation.car_service);
@@ -117,42 +106,42 @@ export default function useHotelReservations(navigationRef) {
       room: reservationRoom,
       reservation: {
         ...reservation,
+        guest_name: `${reservation.first_name} ${reservation.last_name}`.trim(),
         guests: guestCount
       },
-      status: usingFallback ? "Saved offline" : "Request sent"
+      status: "Request sent"
     };
 
     setSubmitting(true);
 
     try {
-      if (!usingFallback) {
-        const result = await createReservation({
-          room_id: reservationRoom.id,
-          check_in: reservation.check_in,
-          check_out: reservation.check_out,
-          num_guests: guestCount,
-          booking_source: "direct",
-          special_requests: specialRequests || null,
-          guest: {
-            full_name: `${reservation.first_name} ${reservation.last_name}`.trim(),
-            first_name: reservation.first_name,
-            last_name: reservation.last_name,
-            email: reservation.email,
-            phone,
-            nationality: reservation.nationality
-          },
-          payment: {
-            method: reservation.payment_method,
-            transaction_ref:
-              reservation.payment_method === "online"
-                ? `MOBILE-${Date.now().toString(36).toUpperCase()}`
-                : null
-          }
-        });
+      const result = await createReservation({
+        room_id: reservationRoom.id,
+        check_in: reservation.check_in,
+        check_out: reservation.check_out,
+        num_guests: guestCount,
+        booking_source: "direct",
+        special_requests: specialRequests || null,
+        guest: {
+          full_name: `${reservation.first_name} ${reservation.last_name}`.trim(),
+          first_name: reservation.first_name,
+          last_name: reservation.last_name,
+          email: reservation.email,
+          phone,
+          nationality: reservation.nationality
+        },
+        payment: {
+          method: reservation.payment_method,
+          transaction_ref:
+            reservation.payment_method === "online"
+              ? `MOBILE-${Date.now().toString(36).toUpperCase()}`
+              : null
+        }
+      });
 
-        nextTrip.id = result?.reservation?.id || nextTrip.id;
-        nextTrip.confirmation = result?.reservation;
-      }
+      nextTrip.id = result?.reservation?.id || nextTrip.id;
+      nextTrip.confirmation = result?.reservation;
+      nextTrip.status = result?.reservation?.status || "confirmed";
 
       setSavedTrips((current) => [nextTrip, ...current]);
 
@@ -162,9 +151,7 @@ export default function useHotelReservations(navigationRef) {
 
       Alert.alert(
         nextTrip.status,
-        usingFallback
-          ? "The API is offline, so this trip was saved in the app."
-          : "Your reservation request was sent successfully."
+        "Your reservation request was sent successfully."
       );
 
       closeReservation();
@@ -175,8 +162,6 @@ export default function useHotelReservations(navigationRef) {
   };
 
   return {
-    availableCount: availableRooms.length,
-    bestPrice: Number.isFinite(bestPrice) ? bestPrice : 0,
     closeReservation,
     error,
     featuredRoom,
@@ -186,11 +171,10 @@ export default function useHotelReservations(navigationRef) {
     refreshing,
     reservation,
     reservationRoom,
-    rooms: visibleRooms,
+    rooms,
     savedTrips,
     submitReservation,
     submitting,
-    updateReservation,
-    usingFallback
+    updateReservation
   };
 }

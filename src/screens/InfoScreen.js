@@ -70,20 +70,20 @@ const styles = StyleSheet.create({
   }
 });
 
-export default function InfoScreen({ apiBaseUrl, error, usingFallback, onRefresh }) {
+export default function InfoScreen({ apiBaseUrl, error, onRefresh }) {
   return (
     <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
       <View style={styles.infoPanel}>
         <View style={styles.infoIcon}>
           <Ionicons
-            name={usingFallback ? "cloud-offline-outline" : "cloud-done-outline"}
+            name={error ? "cloud-offline-outline" : "cloud-done-outline"}
             size={26}
             color={colors.gold}
           />
         </View>
 
         <Text style={styles.infoTitle}>
-          {usingFallback ? "API fallback active" : "API connected"}
+          {error ? "API unavailable" : "API connected"}
         </Text>
 
         <Text style={styles.infoText}>Base URL: {apiBaseUrl}</Text>

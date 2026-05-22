@@ -18,6 +18,10 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: '#F7F7F7',
   },
+  imagePlaceholder: {
+    alignItems: "center",
+    justifyContent: "center"
+  },
   availabilityOverlay: {
     position: 'absolute',
     top: 16,
@@ -108,16 +112,23 @@ const styles = StyleSheet.create({
 
 export default function RoomCard({ room, onDetails, onReserve }) {
   const isAvailable = room.available;
+  const roomImage = getRoomImage(room);
 
   return (
     <View style={styles.roomCard}>
       {/* Image Section */}
       <Pressable onPress={onDetails} style={styles.imageWrapper}>
-        <Image 
-          source={{ uri: getRoomImage(room) }} 
-          style={styles.roomImage} 
-          resizeMode="cover"
-        />
+        {roomImage ? (
+          <Image 
+            source={{ uri: roomImage }} 
+            style={styles.roomImage} 
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.roomImage, styles.imagePlaceholder]}>
+            <Ionicons name="image-outline" size={28} color="#AF944F" />
+          </View>
+        )}
         {!isAvailable && (
           <View style={styles.availabilityOverlay}>
             <Text style={styles.availabilityText}>Fully Booked</Text>

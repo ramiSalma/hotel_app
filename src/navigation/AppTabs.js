@@ -27,8 +27,16 @@ const tabScreens = {
   home: { label: "HOME", icon: "home-outline", activeIcon: "home-sharp" },
   rooms: { label: "SUITES", icon: "bed-outline", activeIcon: "bed-sharp" },
   menu: { label: "MENU", icon: "grid-outline", activeIcon: "grid-sharp" },
-  trips: { label: "TRIPS", icon: "calendar-outline", activeIcon: "calendar-sharp" },
-  profile: { label: "PROFILE", icon: "person-outline", activeIcon: "person-sharp" }
+  trips: {
+    label: "TRIPS",
+    icon: "calendar-outline",
+    activeIcon: "calendar-sharp",
+  },
+  profile: {
+    label: "PROFILE",
+    icon: "person-outline",
+    activeIcon: "person-sharp",
+  },
 };
 
 // --- LUXURY ANIMATED ICON COMPONENT ---
@@ -45,7 +53,9 @@ function TabBarIcon({ focused, color, name }) {
   }, [focused]);
 
   return (
-    <Animated.View style={{ transform: [{ scale: scaleValue }], alignItems: 'center' }}>
+    <Animated.View
+      style={{ transform: [{ scale: scaleValue }], alignItems: "center" }}
+    >
       <Ionicons name={name} size={20} color={color} />
       {focused && <View style={styles.activeIndicator} />}
     </Animated.View>
@@ -53,8 +63,6 @@ function TabBarIcon({ focused, color, name }) {
 }
 
 export default function AppTabs({
-  availableCount,
-  bestPrice,
   error,
   featuredRoom,
   loading,
@@ -67,7 +75,6 @@ export default function AppTabs({
   reservationRoom,
   savedTrips,
   submitting,
-  usingFallback
 }) {
   const openDetails = (navigation, room) => {
     navigation.navigate("roomDetails", { room });
@@ -84,7 +91,7 @@ export default function AppTabs({
             return {
               headerShown: false,
               tabBarButton: () => null,
-              tabBarStyle: { display: "none" }
+              tabBarStyle: { display: "none" },
             };
           }
 
@@ -95,54 +102,58 @@ export default function AppTabs({
             tabBarStyle: styles.tabBar,
             tabBarLabelStyle: styles.tabBarLabel,
             tabBarIcon: ({ focused, color }) => (
-              <TabBarIcon 
-                focused={focused} 
-                color={color} 
-                name={focused ? screen.activeIcon : screen.icon} 
+              <TabBarIcon
+                focused={focused}
+                color={color}
+                name={focused ? screen.activeIcon : screen.icon}
               />
             ),
-            tabBarLabel: screen.label
+            tabBarLabel: screen.label,
           };
         }}
       >
         <Tab.Screen name="home">
-          {({ navigation }) => (
-            loading ? <LoadingState /> : (
+          {({ navigation }) =>
+            loading ? (
+              <LoadingState />
+            ) : (
               <HomeScreen
-                availableCount={availableCount}
-                bestPrice={bestPrice}
-                error={error}
-                featuredRoom={featuredRoom}
-                rooms={rooms.slice(0, 3)}
-                usingFallback={usingFallback}
-                onDetails={(room) => openDetails(navigation, room)}
-                onReserve={onReserve}
-                onViewRooms={() => navigation.navigate("rooms")}
+                onBookStay={() => setActiveTab("rooms")}
+                onBookTable={() => setActiveTab("restaurant")}
+                onBookSpa={() => setActiveTab("spa")}
+                onEvents={() => setActiveTab("events")}
               />
             )
-          )}
+          }
         </Tab.Screen>
 
         <Tab.Screen name="rooms">
-          {({ navigation }) => (
-            loading ? <LoadingState /> : (
+          {({ navigation }) =>
+            loading ? (
+              <LoadingState />
+            ) : (
               <RoomsScreen
                 rooms={rooms}
                 onDetails={(room) => openDetails(navigation, room)}
                 onReserve={onReserve}
               />
             )
-          )}
+          }
         </Tab.Screen>
 
         <Tab.Screen name="menu" component={MenuScreen} />
 
         <Tab.Screen name="trips">
-          {({ navigation }) => (
-            loading ? <LoadingState /> : (
-              <TripsScreen trips={savedTrips} onExplore={() => navigation.navigate("rooms")} />
+          {({ navigation }) =>
+            loading ? (
+              <LoadingState />
+            ) : (
+              <TripsScreen
+                trips={savedTrips}
+                onExplore={() => navigation.navigate("rooms")}
+              />
             )
-          )}
+          }
         </Tab.Screen>
 
         <Tab.Screen name="profile" component={ProfileScreen} />
@@ -173,15 +184,15 @@ const styles = StyleSheet.create({
     backgroundColor: luxuryColors.black,
     borderTopWidth: 0,
     position: "absolute",
-    
+
     // Architectural Spacing
-    bottom: Platform.OS === 'ios' ? 38 : 28,
+    bottom: Platform.OS === "ios" ? 38 : 28,
     marginHorizontal: 24, // Luxury margin-x
     height: 74,
     borderRadius: 26,
-    
+
     // Padding logic to keep icons centered
-    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+    paddingBottom: Platform.OS === "ios" ? 24 : 12,
     paddingTop: 14,
 
     // Deep Onyx Shadow
@@ -196,14 +207,15 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 2, // Wider tracking for luxury feel
     marginTop: 6,
-    fontFamily: Platform.OS === 'ios' ? 'HelveticaNeue-Medium' : 'sans-serif-medium',
+    fontFamily:
+      Platform.OS === "ios" ? "HelveticaNeue-Medium" : "sans-serif-medium",
   },
   activeIndicator: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -8,
     width: 3,
     height: 3,
     borderRadius: 1.5,
     backgroundColor: luxuryColors.gold,
-  }
+  },
 });

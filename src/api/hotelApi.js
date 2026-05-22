@@ -7,6 +7,12 @@ const platformDefaultHost = Platform.select({
   default: "http://127.0.0.1:8000"
 });
 
+const localBackendHosts = [
+  "http://localhost:8000",
+  "http://127.0.0.1:8000",
+  "http://10.0.2.2:8000"
+];
+
 function getExpoDevServerApiUrl() {
   const scriptURL = NativeModules?.SourceCode?.scriptURL || "";
   const host = scriptURL.match(/^https?:\/\/([^/:]+)/)?.[1];
@@ -29,13 +35,29 @@ function resolveApiBaseUrl() {
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();
+export const API_BASE_URLS = getApiBaseUrlCandidates();
 
 const ROOM_ENDPOINTS = ["/api/rooms", "/rooms"];
 const AVAILABLE_ROOM_ENDPOINTS = ["/api/rooms/available", "/rooms/available"];
 const RESERVATION_ENDPOINTS = ["/api/reservations", "/reservations"];
 
-function buildApiUrl(path) {
-  const baseUrl = API_BASE_URL.replace(/\/$/, "");
+function normalizeBaseUrl(url) {
+  return String(url || "").trim().replace(/\/$/, "");
+}
+
+function getApiBaseUrlCandidates() {
+  const configuredUrl = normalizeBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL);
+  const devServerUrl = normalizeBaseUrl(Platform.OS === "web" ? "" : getExpoDevServerApiUrl());
+  const candidates =
+    Platform.OS === "web"
+      ? [platformDefaultHost, ...localBackendHosts, configuredUrl]
+      : [devServerUrl, configuredUrl, platformDefaultHost, ...localBackendHosts];
+
+  return [...new Set(candidates.map(normalizeBaseUrl).filter(Boolean))];
+}
+
+function buildApiUrl(base, path) {
+  const baseUrl = normalizeBaseUrl(base);
   const endpoint = path.startsWith("/") ? path : `/${path}`;
 
   if (baseUrl.endsWith("/api") && endpoint.startsWith("/api/")) {
@@ -45,10 +67,9 @@ function buildApiUrl(path) {
   return `${baseUrl}${endpoint}`;
 }
 
-async function request(path, options = {}) {
+async function requestUrl(url, options = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12000);
-  const url = buildApiUrl(path);
 
   try {
     const response = await fetch(url, {
@@ -84,13 +105,40 @@ async function request(path, options = {}) {
     return payload;
   } catch (error) {
     if (error.name === "AbortError") {
-      throw new Error(`API timeout while calling ${url}`);
+      const timeoutError = new Error(`API timeout while calling ${url}`);
+      timeoutError.isNetworkError = true;
+      throw timeoutError;
+    }
+
+    if (!error.status) {
+      error.isNetworkError = true;
+      error.message = `${error.message} (${url})`;
     }
 
     throw error;
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function request(path, options = {}) {
+  const errors = [];
+
+  for (const baseUrl of API_BASE_URLS) {
+    const url = buildApiUrl(baseUrl, path);
+
+    try {
+      return await requestUrl(url, options);
+    } catch (error) {
+      errors.push(`${url}: ${error.message}`);
+
+      if (!error.isNetworkError) {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`Unable to connect to the backend. Tried:\n${errors.join("\n")}`);
 }
 
 async function firstWorkingEndpoint(paths, options) {

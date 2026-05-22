@@ -39,7 +39,7 @@ export default function ReservationScreen({
   const [stepIndex, setStepIndex] = useState(0);
   const currentStep = steps[stepIndex];
   const nights = calculateNights(value.check_in, value.check_out);
-  const adults = Number(value.adults || value.guests || 1);
+  const adults = Number(value.adults || 1);
   const children = Number(value.children || 0);
   const guestCount = Math.max(adults + children, 1);
   const carService = carServiceOptions.find((option) => option.id === value.car_service) || carServiceOptions[0];

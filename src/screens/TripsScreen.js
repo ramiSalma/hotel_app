@@ -110,7 +110,8 @@ export default function TripsScreen({ trips, onExplore }) {
           </Text>
 
           <Text style={styles.tripMeta}>
-            {item.reservation.guest_name} - {item.reservation.guests} guest
+            {item.reservation.guest_name ||
+              `${item.reservation.first_name || ""} ${item.reservation.last_name || ""}`.trim()} - {item.reservation.guests} guest
             {item.reservation.guests === 1 ? "" : "s"}
           </Text>
         </View>

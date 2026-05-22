@@ -16,7 +16,12 @@ const styles = StyleSheet.create({
   },
   detailsImage: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#F7F7F7",
     width: "100%",
+  },
+  imagePlaceholder: {
+    alignItems: "center",
+    justifyContent: "center"
   },
   imageOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -154,13 +159,20 @@ export default function RoomDetailsScreen({ navigation, route, onReserve }) {
   };
 
   const isAvailable = room.status === "available" || room.available;
+  const roomImage = getRoomImage(room);
 
   return (
     <View style={styles.screen}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header Section */}
         <View style={styles.headerContainer}>
-          <Image source={{ uri: getRoomImage(room) }} style={styles.detailsImage} />
+          {roomImage ? (
+            <Image source={{ uri: roomImage }} style={styles.detailsImage} />
+          ) : (
+            <View style={[styles.detailsImage, styles.imagePlaceholder]}>
+              <Ionicons name="image-outline" size={34} color="#AF944F" />
+            </View>
+          )}
           <View style={styles.imageOverlay} />
           <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color="#1A1A1A" />

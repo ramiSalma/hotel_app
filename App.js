@@ -33,8 +33,6 @@ export default function App() {
       {enteredApp ? (
         <View style={styles.appFrame}>
           <AppTabs
-            availableCount={hotel.availableCount}
-            bestPrice={hotel.bestPrice}
             error={hotel.error}
             featuredRoom={hotel.featuredRoom}
             loading={hotel.loading}
@@ -49,7 +47,6 @@ export default function App() {
             rooms={hotel.rooms}
             savedTrips={hotel.savedTrips}
             submitting={hotel.submitting}
-            usingFallback={hotel.usingFallback}
           />
         </View>
       ) : null}

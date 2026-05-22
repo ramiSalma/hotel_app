@@ -44,7 +44,13 @@ The app reads rooms from:
 GET /api/rooms
 ```
 
-It also tries `/api/room` and `/rooms` if the first endpoint is unavailable.
+It also tries `/rooms` if the base URL already points at `/api`.
+
+The reservation page can check availability through:
+
+```text
+GET /api/rooms/available?check_in=2026-05-01&check_out=2026-05-05&guests=2
+```
 
 It sends reservations to:
 
@@ -52,20 +58,30 @@ It sends reservations to:
 POST /api/reservations
 ```
 
-It also tries `/api/reservation`, `/api/bookings`, and `/reservations` if the first endpoint is unavailable.
+It also tries `/reservations` if the base URL already points at `/api`.
 
 Reservation payload:
 
 ```json
 {
-  "room_id": 1,
-  "guest_name": "Guest Name",
-  "email": "guest@example.com",
-  "phone": "0600000000",
+  "room_id": "room-uuid",
   "check_in": "2026-05-01",
   "check_out": "2026-05-05",
-  "guests": 2,
-  "notes": "Optional notes"
+  "num_guests": 2,
+  "booking_source": "direct",
+  "special_requests": "Optional notes",
+  "guest": {
+    "full_name": "Guest Name",
+    "first_name": "Guest",
+    "last_name": "Name",
+    "email": "guest@example.com",
+    "phone": "+212 0600000000",
+    "nationality": "Morocco"
+  },
+  "payment": {
+    "method": "pay_at_hotel",
+    "transaction_ref": null
+  }
 }
 ```
 

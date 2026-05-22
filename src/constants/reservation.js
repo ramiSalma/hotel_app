@@ -9,7 +9,6 @@ export function getInitialReservation() {
     title: "",
     first_name: "",
     last_name: "",
-    guest_name: "",
     email: "",
     phone: "",
     nationality: "Morocco",
@@ -18,7 +17,6 @@ export function getInitialReservation() {
     check_out: dateInput(1),
     adults: "1",
     children: "0",
-    guests: "1",
     car_service: "none",
     arrival_time: "",
     flight_number: "",
@@ -30,8 +28,6 @@ export function getInitialReservation() {
     cvv: ""
   };
 }
-
-export const initialReservation = getInitialReservation();
 
 export const carServiceOptions = [
   {
