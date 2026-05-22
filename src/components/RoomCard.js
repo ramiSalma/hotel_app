@@ -141,7 +141,7 @@ export default function RoomCard({ room, onDetails, onReserve }) {
         <View style={styles.footerActionRow}>
           <View style={styles.metaContainer}>
             <Text style={styles.metaText}>{room.capacity} Guests</Text>
-            <Text style={styles.metaText}>•</Text>
+            <Text style={styles.metaText}>|</Text>
             <Text style={styles.metaText}>{room.beds} Beds</Text>
           </View>
 

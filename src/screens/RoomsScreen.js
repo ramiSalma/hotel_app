@@ -12,7 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import RoomCard from "../components/RoomCard";
 
-const ROOM_TYPES = ["all", "single", "double", "suite", "deluxe"];
+const ROOM_TYPES = ["all", "single", "double", "suite", "penthouse"];
 
 // default rooms to empty array to prevent the .filter error
 export default function RoomsScreen({ rooms = [], refreshing, onRefresh, onDetails, onReserve }) {

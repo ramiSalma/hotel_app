@@ -3,13 +3,13 @@ import { Alert } from "react-native";
 
 import { createReservation, getRooms } from "../api/hotelApi";
 import { fallbackRooms } from "../constants/rooms";
-import { initialReservation } from "../constants/reservation";
+import { carServiceOptions, getInitialReservation } from "../constants/reservation";
 import { normalizeRoom } from "../utils/rooms";
 
 export default function useHotelReservations(navigationRef) {
   const [rooms, setRooms] = useState([]);
   const [reservationRoom, setReservationRoom] = useState(null);
-  const [reservation, setReservation] = useState(initialReservation);
+  const [reservation, setReservation] = useState(getInitialReservation);
   const [savedTrips, setSavedTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -57,7 +57,11 @@ export default function useHotelReservations(navigationRef) {
 
   const openReservation = (room) => {
     setReservationRoom(room);
-    setReservation(initialReservation);
+    setReservation(getInitialReservation());
+
+    if (navigationRef.isReady()) {
+      navigationRef.navigate("reservation", { room });
+    }
   };
 
   const closeReservation = () => {
@@ -75,17 +79,45 @@ export default function useHotelReservations(navigationRef) {
   const submitReservation = async () => {
     if (!reservationRoom) return;
 
-    if (!reservation.guest_name || !reservation.email || !reservation.check_in || !reservation.check_out) {
-      Alert.alert("Missing details", "Please add your name, email, check-in date, and check-out date.");
+    if (
+      !reservation.first_name ||
+      !reservation.last_name ||
+      !reservation.email ||
+      !reservation.phone ||
+      !reservation.check_in ||
+      !reservation.check_out
+    ) {
+      Alert.alert("Missing details", "Please add your name, email, phone, check-in date, and check-out date.");
       return;
     }
+
+    if (reservation.payment_method === "online") {
+      const cardDigits = String(reservation.card_number || "").replace(/\D/g, "");
+      const cvvDigits = String(reservation.cvv || "").replace(/\D/g, "");
+
+      if (!reservation.card_holder || cardDigits.length < 12 || !reservation.expiry_date || cvvDigits.length < 3) {
+        Alert.alert("Payment details", "Please complete the online payment details before confirming.");
+        return;
+      }
+    }
+
+    const adults = Number(reservation.adults || reservation.guests || 1);
+    const children = Number(reservation.children || 0);
+    const guestCount = Math.max(adults + children, 1);
+    const carService = carServiceOptions.find((option) => option.id === reservation.car_service);
+    const phone = `${reservation.phone_code || ""} ${reservation.phone || ""}`.trim();
+    const carServiceRequest =
+      carService && carService.id !== "none"
+        ? `Car service: ${carService.title}. Arrival: ${reservation.arrival_time || "not provided"}. Flight: ${reservation.flight_number || "not provided"}.`
+        : "Car service: no transfer requested.";
+    const specialRequests = [reservation.notes, carServiceRequest].filter(Boolean).join("\n\n");
 
     const nextTrip = {
       id: `${reservationRoom.id}-${Date.now()}`,
       room: reservationRoom,
       reservation: {
         ...reservation,
-        guests: Number(reservation.guests || 1)
+        guests: guestCount
       },
       status: usingFallback ? "Saved offline" : "Request sent"
     };
@@ -94,10 +126,32 @@ export default function useHotelReservations(navigationRef) {
 
     try {
       if (!usingFallback) {
-        await createReservation({
-          ...nextTrip.reservation,
-          room_id: reservationRoom.id
+        const result = await createReservation({
+          room_id: reservationRoom.id,
+          check_in: reservation.check_in,
+          check_out: reservation.check_out,
+          num_guests: guestCount,
+          booking_source: "direct",
+          special_requests: specialRequests || null,
+          guest: {
+            full_name: `${reservation.first_name} ${reservation.last_name}`.trim(),
+            first_name: reservation.first_name,
+            last_name: reservation.last_name,
+            email: reservation.email,
+            phone,
+            nationality: reservation.nationality
+          },
+          payment: {
+            method: reservation.payment_method,
+            transaction_ref:
+              reservation.payment_method === "online"
+                ? `MOBILE-${Date.now().toString(36).toUpperCase()}`
+                : null
+          }
         });
+
+        nextTrip.id = result?.reservation?.id || nextTrip.id;
+        nextTrip.confirmation = result?.reservation;
       }
 
       setSavedTrips((current) => [nextTrip, ...current]);

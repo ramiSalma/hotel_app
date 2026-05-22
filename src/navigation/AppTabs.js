@@ -11,6 +11,7 @@ import TripsScreen from "../screens/TripsScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import MenuScreen from "../screens/MenuScreen";
 import RoomDetailsScreen from "../screens/RoomDetailsScreen";
+import ReservationScreen from "../screens/ReservationScreen";
 import LoadingState from "../components/LoadingState";
 
 const Tab = createBottomTabNavigator();
@@ -59,8 +60,13 @@ export default function AppTabs({
   loading,
   navigationRef,
   onReserve,
+  onReservationChange,
+  onReservationSubmit,
   rooms,
+  reservation,
+  reservationRoom,
   savedTrips,
+  submitting,
   usingFallback
 }) {
   const openDetails = (navigation, room) => {
@@ -143,6 +149,19 @@ export default function AppTabs({
 
         <Tab.Screen name="roomDetails">
           {(props) => <RoomDetailsScreen {...props} onReserve={onReserve} />}
+        </Tab.Screen>
+
+        <Tab.Screen name="reservation">
+          {(props) => (
+            <ReservationScreen
+              {...props}
+              room={reservationRoom || props.route.params?.room}
+              value={reservation}
+              submitting={submitting}
+              onChange={onReservationChange}
+              onSubmit={onReservationSubmit}
+            />
+          )}
         </Tab.Screen>
       </Tab.Navigator>
     </NavigationContainer>

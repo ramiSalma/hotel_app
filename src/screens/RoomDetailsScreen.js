@@ -1,7 +1,7 @@
 import React from "react";
 import { Image, Pressable, ScrollView, StyleSheet, Text, View, Platform, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { formatMoney } from "../utils/rooms";
+import { formatMoney, getRoomImage } from "../utils/rooms";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -160,7 +160,7 @@ export default function RoomDetailsScreen({ navigation, route, onReserve }) {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header Section */}
         <View style={styles.headerContainer}>
-          <Image source={{ uri: room.images?.[0] }} style={styles.detailsImage} />
+          <Image source={{ uri: getRoomImage(room) }} style={styles.detailsImage} />
           <View style={styles.imageOverlay} />
           <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color="#1A1A1A" />

@@ -30,15 +30,28 @@ function resolveApiBaseUrl() {
 
 export const API_BASE_URL = resolveApiBaseUrl();
 
-const ROOM_ENDPOINTS = ["/api/rooms", "/api/room", "/rooms"];
-const RESERVATION_ENDPOINTS = ["/api/reservations", "/api/reservation", "/api/bookings", "/reservations"];
+const ROOM_ENDPOINTS = ["/api/rooms", "/rooms"];
+const AVAILABLE_ROOM_ENDPOINTS = ["/api/rooms/available", "/rooms/available"];
+const RESERVATION_ENDPOINTS = ["/api/reservations", "/reservations"];
+
+function buildApiUrl(path) {
+  const baseUrl = API_BASE_URL.replace(/\/$/, "");
+  const endpoint = path.startsWith("/") ? path : `/${path}`;
+
+  if (baseUrl.endsWith("/api") && endpoint.startsWith("/api/")) {
+    return `${baseUrl}${endpoint.replace(/^\/api/, "")}`;
+  }
+
+  return `${baseUrl}${endpoint}`;
+}
 
 async function request(path, options = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12000);
+  const url = buildApiUrl(path);
 
   try {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
+    const response = await fetch(url, {
       ...options,
       headers: {
         Accept: "application/json",
@@ -52,7 +65,12 @@ async function request(path, options = {}) {
     const payload = isJson ? await response.json() : await response.text();
 
     if (!response.ok) {
+      const firstValidationError =
+        payload?.errors && typeof payload.errors === "object"
+          ? Object.values(payload.errors).flat()[0]
+          : null;
       const message =
+        firstValidationError ||
         payload?.message ||
         payload?.error ||
         (typeof payload === "string" && payload) ||
@@ -66,7 +84,7 @@ async function request(path, options = {}) {
     return payload;
   } catch (error) {
     if (error.name === "AbortError") {
-      throw new Error(`API timeout while calling ${API_BASE_URL}${path}`);
+      throw new Error(`API timeout while calling ${url}`);
     }
 
     throw error;
@@ -97,12 +115,27 @@ function unwrapCollection(payload) {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.data)) return payload.data;
   if (Array.isArray(payload?.rooms)) return payload.rooms;
+  if (Array.isArray(payload?.room)) return payload.room;
+  if (Array.isArray(payload?.results)) return payload.results;
+  if (Array.isArray(payload?.data?.rooms)) return payload.data.rooms;
   if (Array.isArray(payload?.data?.data)) return payload.data.data;
   return [];
 }
 
 export async function getRooms() {
   const payload = await firstWorkingEndpoint(ROOM_ENDPOINTS);
+  return unwrapCollection(payload);
+}
+
+export async function getAvailableRooms({ checkIn, checkOut, guests } = {}) {
+  const params = new URLSearchParams();
+
+  if (checkIn) params.set("check_in", checkIn);
+  if (checkOut) params.set("check_out", checkOut);
+  if (guests) params.set("guests", String(guests));
+
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  const payload = await firstWorkingEndpoint(AVAILABLE_ROOM_ENDPOINTS.map((path) => `${path}${suffix}`));
   return unwrapCollection(payload);
 }
 
