@@ -218,18 +218,25 @@ const styles = StyleSheet.create({
     borderColor: colors.border || "#EBEBEB",
     borderRadius: radii.xl,
     borderWidth: 1,
-    overflow: "hidden"
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-around",
+    paddingHorizontal: 10,
+    paddingVertical: 12
   },
 
   menuRow: {
     alignItems: "center",
-    borderBottomColor: colors.border || "#EBEBEB",
-    borderBottomWidth: 1,
-    flexDirection: "row",
-    gap: 14,
-    minHeight: 74,
-    paddingHorizontal: 16,
-    paddingVertical: 12
+    borderColor: colors.border || "#EBEBEB",
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    gap: 8,
+    justifyContent: "center",
+    marginVertical: 8,
+    minHeight: 112,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    width: "44%"
   },
 
   rowPressed: {
@@ -237,7 +244,7 @@ const styles = StyleSheet.create({
   },
 
   lastRow: {
-    borderBottomWidth: 0
+    borderBottomWidth: 1
   },
 
   iconWrap: {
@@ -250,20 +257,22 @@ const styles = StyleSheet.create({
   },
 
   rowText: {
-    flex: 1
+    alignItems: "center"
   },
 
   rowTitle: {
     color: colors.text,
     fontSize: 15,
-    fontWeight: "700"
+    fontWeight: "700",
+    textAlign: "center"
   },
 
   rowSubtitle: {
     color: colors.muted || "#666",
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: 2
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 3,
+    textAlign: "center"
   },
 
   conciergeCard: {

@@ -69,6 +69,7 @@ Reservation payload:
   "check_out": "2026-05-05",
   "num_guests": 2,
   "booking_source": "direct",
+  "car_service_type": "none",
   "special_requests": "Optional notes",
   "guest": {
     "full_name": "Guest Name",
@@ -79,8 +80,7 @@ Reservation payload:
     "nationality": "Morocco"
   },
   "payment": {
-    "method": "pay_at_hotel",
-    "transaction_ref": null
+    "method": "online"
   }
 }
 ```

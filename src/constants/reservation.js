@@ -21,7 +21,7 @@ export function getInitialReservation() {
     arrival_time: "",
     flight_number: "",
     notes: "",
-    payment_method: "pay_at_hotel",
+    payment_method: "online",
     card_holder: "",
     card_number: "",
     expiry_date: "",

@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../api/hotelApi";
+import { getApiOrigin } from "../api/hotelApi";
 
 export function normalizeRoom(room, index = 0) {
   const rawAmenities = room.amenities || room.features || room.services || [];
@@ -50,7 +50,7 @@ export function normalizeRoom(room, index = 0) {
 
 export function getRoomImage(room) {
   if (room.image?.startsWith("http")) return room.image;
-  if (room.image?.startsWith("/")) return `${API_BASE_URL}${room.image}`;
+  if (room.image?.startsWith("/")) return `${getApiOrigin()}${room.image}`;
   return null;
 }
 

@@ -67,13 +67,16 @@ export default function AppTabs({
   featuredRoom,
   loading,
   navigationRef,
+  onRefresh,
   onReserve,
   onReservationChange,
+  onReservationRoomChange,
   onReservationSubmit,
   rooms,
   reservation,
   reservationRoom,
   savedTrips,
+  refreshing,
   submitting,
 }) {
   const openDetails = (navigation, room) => {
@@ -133,7 +136,10 @@ export default function AppTabs({
               <LoadingState />
             ) : (
               <RoomsScreen
+                error={error}
                 rooms={rooms}
+                refreshing={refreshing}
+                onRefresh={onRefresh}
                 onDetails={(room) => openDetails(navigation, room)}
                 onReserve={onReserve}
               />
@@ -170,6 +176,7 @@ export default function AppTabs({
               value={reservation}
               submitting={submitting}
               onChange={onReservationChange}
+              onRoomChange={onReservationRoomChange}
               onSubmit={onReservationSubmit}
             />
           )}

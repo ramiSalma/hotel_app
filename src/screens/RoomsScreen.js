@@ -7,7 +7,8 @@ import {
   TextInput, 
   View, 
   ScrollView, 
-  ActivityIndicator 
+  ActivityIndicator,
+  RefreshControl
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import RoomCard from "../components/RoomCard";
@@ -15,7 +16,7 @@ import RoomCard from "../components/RoomCard";
 const ROOM_TYPES = ["all", "single", "double", "suite", "penthouse"];
 
 // default rooms to empty array to prevent the .filter error
-export default function RoomsScreen({ rooms = [], refreshing, onRefresh, onDetails, onReserve }) {
+export default function RoomsScreen({ rooms = [], error, refreshing, onRefresh, onDetails, onReserve }) {
   const [query, setQuery] = useState("");
   const [selectedType, setSelectedType] = useState("all");
 
@@ -44,6 +45,11 @@ export default function RoomsScreen({ rooms = [], refreshing, onRefresh, onDetai
         data={filteredRooms}
         keyExtractor={(item) => item.id || Math.random().toString()}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl refreshing={Boolean(refreshing)} onRefresh={onRefresh} tintColor="#AF944F" />
+          ) : undefined
+        }
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View style={styles.header}>
@@ -69,7 +75,16 @@ export default function RoomsScreen({ rooms = [], refreshing, onRefresh, onDetai
         )}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No residences match your criteria.</Text>
+            {error ? <Ionicons name="cloud-offline-outline" size={34} color="#AF944F" /> : null}
+            <Text style={styles.emptyText}>
+              {error || "No residences match your criteria."}
+            </Text>
+            {onRefresh ? (
+              <Pressable onPress={onRefresh} style={styles.retryButton}>
+                {refreshing ? <ActivityIndicator color="#FFF" /> : <Ionicons name="reload" size={16} color="#FFF" />}
+                <Text style={styles.retryText}>{refreshing ? "Loading" : "Retry backend"}</Text>
+              </Pressable>
+            ) : null}
           </View>
         }
       />
@@ -118,6 +133,18 @@ const styles = StyleSheet.create({
   filterTabText: { fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#AAA' },
   activeFilterText: { color: '#1A1A1A', fontWeight: '700' },
   activeDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#AF944F', marginTop: 6 },
-  emptyState: { marginTop: 100, alignItems: 'center' },
-  emptyText: { color: '#999', letterSpacing: 1.5, fontSize: 11, textTransform: 'uppercase' }
+  emptyState: { marginTop: 100, alignItems: 'center', paddingHorizontal: 18 },
+  emptyText: { color: '#999', letterSpacing: 1.5, fontSize: 11, lineHeight: 18, textAlign: "center", textTransform: 'uppercase' },
+  retryButton: {
+    alignItems: "center",
+    backgroundColor: "#1A1A1A",
+    borderRadius: 4,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    marginTop: 18,
+    minHeight: 44,
+    paddingHorizontal: 18
+  },
+  retryText: { color: "#FFF", fontSize: 11, fontWeight: "700", letterSpacing: 1.5, textTransform: "uppercase" }
 });

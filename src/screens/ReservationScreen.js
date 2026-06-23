@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -11,10 +12,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+import { getAvailableRooms } from "../api/hotelApi";
 import FormInput from "../components/FormInput";
 import { calculateNights, carServiceOptions } from "../constants/reservation";
 import { colors, radii, shadows } from "../styles/theme";
-import { formatMoney } from "../utils/rooms";
+import { formatMoney, normalizeRoom } from "../utils/rooms";
 
 const steps = [
   { key: "stay", label: "Stay" },
@@ -33,10 +35,15 @@ export default function ReservationScreen({
   value,
   submitting,
   onChange,
+  onRoomChange,
   onSubmit
 }) {
   const activeRoom = room || route.params?.room;
   const [stepIndex, setStepIndex] = useState(0);
+  const [availabilityRooms, setAvailabilityRooms] = useState([]);
+  const [availabilitySearched, setAvailabilitySearched] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState("");
+  const [searchingAvailability, setSearchingAvailability] = useState(false);
   const currentStep = steps[stepIndex];
   const nights = calculateNights(value.check_in, value.check_out);
   const adults = Number(value.adults || 1);
@@ -47,6 +54,14 @@ export default function ReservationScreen({
   const taxes = roomTotal * 0.1;
   const total = roomTotal + taxes + carService.price;
   const progress = stepIndex / (steps.length - 1);
+
+  const canAccessStep = (targetIndex) => {
+    if (targetIndex <= 0) return true;
+    if (!activeRoom || !value.check_in || !value.check_out) return false;
+    if (targetIndex === 1) return true;
+    if (!value.first_name || !value.last_name || !value.email || !value.phone) return false;
+    return true;
+  };
 
   const canGoNext = useMemo(() => {
     if (currentStep.key === "stay") return value.check_in && value.check_out && activeRoom;
@@ -61,17 +76,36 @@ export default function ReservationScreen({
     }
   };
 
-  if (!activeRoom) {
-    return (
-      <View style={styles.centerState}>
-        <Ionicons name="bed-outline" size={42} color={colors.gold} />
-        <Text style={styles.centerTitle}>Choose a room first</Text>
-        <Pressable onPress={() => navigation.navigate("rooms")} style={styles.primaryButton}>
-          <Text style={styles.primaryButtonText}>Browse rooms</Text>
-        </Pressable>
-      </View>
-    );
-  }
+  const searchAvailability = async () => {
+    if (!value.check_in || !value.check_out) {
+      Alert.alert("Choose dates", "Add a check-in and check-out date before searching.");
+      return;
+    }
+
+    setSearchingAvailability(true);
+    setAvailabilityError("");
+    setAvailabilitySearched(true);
+
+    try {
+      const data = await getAvailableRooms({
+        checkIn: value.check_in,
+        checkOut: value.check_out,
+        guests: guestCount
+      });
+      const normalizedRooms = data.map(normalizeRoom);
+
+      setAvailabilityRooms(normalizedRooms);
+
+      if (!activeRoom || !normalizedRooms.some((availableRoom) => String(availableRoom.id) === String(activeRoom.id))) {
+        onRoomChange?.(normalizedRooms[0] || null);
+      }
+    } catch (error) {
+      setAvailabilityRooms([]);
+      setAvailabilityError(error.message || "Unable to search available rooms.");
+    } finally {
+      setSearchingAvailability(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.screen}>
@@ -130,9 +164,16 @@ export default function ReservationScreen({
               const complete = index < stepIndex;
 
               return (
-                <Pressable key={step.key} onPress={() => setStepIndex(index)} style={styles.stepButton}>
+                <Pressable
+                  key={step.key}
+                  disabled={!canAccessStep(index)}
+                  onPress={() => setStepIndex(index)}
+                  style={styles.stepButton}
+                >
                   <View style={[styles.stepDot, active && styles.activeStepDot, complete && styles.completeStepDot]} />
-                  <Text style={[styles.stepLabel, active && styles.activeStepLabel]}>{step.label}</Text>
+                  <Text style={[styles.stepLabel, active && styles.activeStepLabel, !canAccessStep(index) && styles.lockedStepLabel]}>
+                    {step.label}
+                  </Text>
                 </Pressable>
               );
             })}
@@ -141,7 +182,17 @@ export default function ReservationScreen({
 
         <View style={styles.card}>
           {currentStep.key === "stay" ? (
-            <StayStep room={activeRoom} nights={nights} guestCount={guestCount} />
+            <StayStep
+              room={activeRoom}
+              nights={nights}
+              guestCount={guestCount}
+              rooms={availabilityRooms}
+              searched={availabilitySearched}
+              searching={searchingAvailability}
+              error={availabilityError}
+              onSearch={searchAvailability}
+              onSelectRoom={onRoomChange}
+            />
           ) : null}
 
           {currentStep.key === "guest" ? (
@@ -206,17 +257,68 @@ function SummaryItem({ icon, label, children }) {
   );
 }
 
-function StayStep({ room, nights, guestCount }) {
+function StayStep({
+  room,
+  nights,
+  guestCount,
+  rooms,
+  searched,
+  searching,
+  error,
+  onSearch,
+  onSelectRoom
+}) {
   return (
     <View>
       <Text style={styles.sectionEyebrow}>Rooms & Rates</Text>
-      <Text style={styles.sectionTitle}>{room.name}</Text>
-      <Text style={styles.bodyText}>{room.description}</Text>
+      <Text style={styles.sectionTitle}>{room?.name || "Search available rooms"}</Text>
+      <Text style={styles.bodyText}>
+        {room?.description || "Choose dates and guests, then search the backend for available rooms."}
+      </Text>
       <View style={styles.detailGrid}>
         <Detail label="Stay" value={`${nights} night${nights === 1 ? "" : "s"}`} />
         <Detail label="Guests" value={`${guestCount} guest${guestCount === 1 ? "" : "s"}`} />
-        <Detail label="Rate" value={`${formatMoney(room.price)} / night`} />
+        <Detail label="Rate" value={room ? `${formatMoney(room.price)} / night` : "Select room"} />
       </View>
+
+      <Pressable disabled={searching} onPress={onSearch} style={[styles.searchButton, searching && styles.disabledButton]}>
+        {searching ? <ActivityIndicator color={colors.white} /> : <Ionicons name="search" size={18} color={colors.white} />}
+        <Text style={styles.searchButtonText}>{searching ? "Searching..." : "Search available rooms"}</Text>
+      </Pressable>
+
+      {error ? <Text style={styles.inlineError}>{error}</Text> : null}
+
+      {searched && !searching ? (
+        <View style={styles.availableList}>
+          <Text style={styles.availableTitle}>
+            {rooms.length ? "Available for these dates" : "No rooms available for these dates"}
+          </Text>
+
+          {rooms.map((availableRoom) => {
+            const selected = room && String(availableRoom.id) === String(room.id);
+
+            return (
+              <Pressable
+                key={availableRoom.id}
+                onPress={() => onSelectRoom?.(availableRoom)}
+                style={[styles.availableRoom, selected && styles.availableRoomSelected]}
+              >
+                <View style={styles.availableRoomText}>
+                  <Text style={styles.availableRoomName}>{availableRoom.name}</Text>
+                  <Text style={styles.availableRoomMeta}>
+                    {availableRoom.capacity} guest{availableRoom.capacity === 1 ? "" : "s"} - {formatMoney(availableRoom.price)} / night
+                  </Text>
+                </View>
+                <Ionicons
+                  name={selected ? "checkmark-circle" : "ellipse-outline"}
+                  size={21}
+                  color={selected ? colors.gold : colors.placeholder}
+                />
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -313,13 +415,6 @@ function PaymentStep({ value, onChange, room, nights, taxes, total, carService }
         >
           <Ionicons name="card-outline" size={20} color={colors.gold} />
           <Text style={styles.choiceTitle}>Pay Online</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => onChange("payment_method", "pay_at_hotel")}
-          style={[styles.paymentChoice, value.payment_method === "pay_at_hotel" && styles.activeChoice]}
-        >
-          <Ionicons name="business-outline" size={20} color={colors.gold} />
-          <Text style={styles.choiceTitle}>Pay At Hotel</Text>
         </Pressable>
       </View>
 
@@ -496,6 +591,9 @@ const styles = StyleSheet.create({
   activeStepLabel: {
     color: colors.burgundy
   },
+  lockedStepLabel: {
+    opacity: 0.35
+  },
   card: {
     backgroundColor: colors.white,
     borderColor: colors.border,
@@ -550,6 +648,70 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "800",
     marginTop: 6
+  },
+  searchButton: {
+    alignItems: "center",
+    backgroundColor: colors.burgundy,
+    borderRadius: radii.sm,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    marginTop: 22,
+    minHeight: 48,
+    paddingHorizontal: 16
+  },
+  searchButtonText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 1,
+    textTransform: "uppercase"
+  },
+  inlineError: {
+    color: colors.error,
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 18,
+    marginTop: 12
+  },
+  availableList: {
+    marginTop: 22
+  },
+  availableTitle: {
+    color: colors.placeholder,
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 2,
+    textTransform: "uppercase"
+  },
+  availableRoom: {
+    alignItems: "center",
+    borderColor: colors.border,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "space-between",
+    marginTop: 10,
+    padding: 14
+  },
+  availableRoomSelected: {
+    backgroundColor: colors.surfaceSoft,
+    borderColor: colors.gold
+  },
+  availableRoomText: {
+    flex: 1
+  },
+  availableRoomName: {
+    color: colors.burgundy,
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  availableRoomMeta: {
+    color: colors.muted,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 4
   },
   notesInput: {
     minHeight: 96,

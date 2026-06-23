@@ -65,6 +65,10 @@ export default function useHotelReservations(navigationRef) {
     }));
   };
 
+  const updateReservationRoom = (room) => {
+    setReservationRoom(room);
+  };
+
   const submitReservation = async () => {
     if (!reservationRoom) return;
 
@@ -121,6 +125,7 @@ export default function useHotelReservations(navigationRef) {
         check_out: reservation.check_out,
         num_guests: guestCount,
         booking_source: "direct",
+        car_service_type: reservation.car_service || "none",
         special_requests: specialRequests || null,
         guest: {
           full_name: `${reservation.first_name} ${reservation.last_name}`.trim(),
@@ -131,11 +136,7 @@ export default function useHotelReservations(navigationRef) {
           nationality: reservation.nationality
         },
         payment: {
-          method: reservation.payment_method,
-          transaction_ref:
-            reservation.payment_method === "online"
-              ? `MOBILE-${Date.now().toString(36).toUpperCase()}`
-              : null
+          method: "online"
         }
       });
 
@@ -175,6 +176,7 @@ export default function useHotelReservations(navigationRef) {
     savedTrips,
     submitReservation,
     submitting,
-    updateReservation
+    updateReservation,
+    updateReservationRoom
   };
 }

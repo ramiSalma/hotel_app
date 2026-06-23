@@ -1,16 +1,16 @@
 import { NativeModules, Platform } from "react-native";
 
 const platformDefaultHost = Platform.select({
-  android: "http://10.0.2.2:8000",
-  ios: "http://127.0.0.1:8000",
-  web: "http://localhost:8000",
-  default: "http://127.0.0.1:8000"
+  android: "http:///10.0.9.170:8000/api",
+  ios: "http://127.0.0.1:8000/api",
+  web: "http://localhost:8000/api",
+  default: "http://127.0.0.1:8000/api"
 });
 
 const localBackendHosts = [
-  "http://localhost:8000",
-  "http://127.0.0.1:8000",
-  "http://10.0.2.2:8000"
+  "http://localhost:8000/api",
+  "http://127.0.0.1:8000/api",
+  "http:///10.0.9.170:8000/api"
 ];
 
 function getExpoDevServerApiUrl() {
@@ -19,11 +19,11 @@ function getExpoDevServerApiUrl() {
 
   if (!host || host === "localhost" || host === "127.0.0.1") return "";
 
-  return `http://${host}:8000`;
+  return `http://${host}:8000/api`;
 }
 
 function resolveApiBaseUrl() {
-  const configuredUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
+  const configuredUrl = normalizeApiBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL);
   const devServerUrl = Platform.OS === "web" ? "" : getExpoDevServerApiUrl();
   const baseUrl = configuredUrl || devServerUrl || platformDefaultHost;
 
@@ -31,23 +31,33 @@ function resolveApiBaseUrl() {
     return (devServerUrl || platformDefaultHost).replace(/\/$/, "");
   }
 
-  return baseUrl.replace(/\/$/, "");
+  return normalizeApiBaseUrl(baseUrl);
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();
 export const API_BASE_URLS = getApiBaseUrlCandidates();
 
-const ROOM_ENDPOINTS = ["/api/rooms", "/rooms"];
-const AVAILABLE_ROOM_ENDPOINTS = ["/api/rooms/available", "/rooms/available"];
-const RESERVATION_ENDPOINTS = ["/api/reservations", "/reservations"];
+const ROOM_ENDPOINTS = ["/rooms"];
+const AVAILABLE_ROOM_ENDPOINTS = ["/rooms/available"];
+const RESERVATION_ENDPOINTS = ["/reservations"];
 
 function normalizeBaseUrl(url) {
   return String(url || "").trim().replace(/\/$/, "");
 }
 
+function normalizeApiBaseUrl(url) {
+  const baseUrl = normalizeBaseUrl(url);
+  if (!baseUrl) return "";
+  return baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
+}
+
+export function getApiOrigin() {
+  return API_BASE_URL.replace(/\/api$/, "");
+}
+
 function getApiBaseUrlCandidates() {
-  const configuredUrl = normalizeBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL);
-  const devServerUrl = normalizeBaseUrl(Platform.OS === "web" ? "" : getExpoDevServerApiUrl());
+  const configuredUrl = normalizeApiBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL);
+  const devServerUrl = normalizeApiBaseUrl(Platform.OS === "web" ? "" : getExpoDevServerApiUrl());
   const candidates =
     Platform.OS === "web"
       ? [platformDefaultHost, ...localBackendHosts, configuredUrl]
@@ -57,12 +67,8 @@ function getApiBaseUrlCandidates() {
 }
 
 function buildApiUrl(base, path) {
-  const baseUrl = normalizeBaseUrl(base);
+  const baseUrl = normalizeApiBaseUrl(base);
   const endpoint = path.startsWith("/") ? path : `/${path}`;
-
-  if (baseUrl.endsWith("/api") && endpoint.startsWith("/api/")) {
-    return `${baseUrl}${endpoint.replace(/^\/api/, "")}`;
-  }
 
   return `${baseUrl}${endpoint}`;
 }

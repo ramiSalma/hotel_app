@@ -39,6 +39,7 @@ export default function App() {
             navigationRef={navigationRef}
             onRefresh={hotel.refreshRooms}
             onReservationChange={hotel.updateReservation}
+            onReservationRoomChange={hotel.updateReservationRoom}
             onReservationSubmit={hotel.submitReservation}
             onReserve={hotel.openReservation}
             refreshing={hotel.refreshing}
